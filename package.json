@@ -1,5 +1,5 @@
 {
-  "name": "n8n-nodes-vwork-instant-airtable-trigger-v8",
+  "name": "n8n-nodes-vwork-instant-airtable-trigger",
   "version": "1.0.0",
   "description": "N8N node for Airtable instant webhook triggers. Made by vwork Digital.",
   "keywords": [
