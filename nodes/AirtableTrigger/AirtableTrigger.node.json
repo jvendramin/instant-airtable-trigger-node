@@ -9,12 +9,12 @@
 	"resources": {
 		"credentialDocumentation": [
 			{
-				"url": "https://www.npmjs.com/package/instant-airtable-trigger"
+				"url": "https://airtable.com/developers/web/api/scopes"
 			}
 		],
 		"primaryDocumentation": [
 			{
-				"url": "https://www.npmjs.com/package/instant-airtable-trigger"
+				"url": "https://vform.fillout.com/airtable-node-feedback"
 			}
 		]
 	}
