@@ -13,20 +13,19 @@ import {
 	airtableApiRequest,
 	extractFieldInfo,
 	getBases,
-	getTables,
 	getFields
 } from './GenericFunctions';
 
 export class AirtableTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Instant Airtable Trigger',
+		displayName: 'vwork Instant Airtable Trigger',
 		name: 'airtableTrigger',
-		icon: 'file:node_logo.svg',
+		icon: 'file:node-logo.svg',
 		group: ['trigger'],
 		version: 1,
 		description: 'Handles Airtable events via webhooks',
 		defaults: {
-			name: 'Instant Airtable Trigger',
+			name: 'vwork Instant Airtable Trigger',
 		},
 		inputs: [],
 		outputs: [{ type: NodeConnectionType.Main }],
@@ -69,7 +68,7 @@ export class AirtableTrigger implements INodeType {
 				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 			},
 			{
-				displayName: 'Fields to Watch Names or IDs',
+				displayName: 'Fields to Watch For Changes',
 				name: 'fieldsToWatch',
 				type: 'multiOptions',
 				typeOptions: {
@@ -80,7 +79,7 @@ export class AirtableTrigger implements INodeType {
 				description: 'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 			},
 			{
-				displayName: 'Fields to Include in Output Names or IDs',
+				displayName: 'Extra Fields to Include in Output',
 				name: 'fieldsToInclude',
 				type: 'multiOptions',
 				typeOptions: {
@@ -91,7 +90,7 @@ export class AirtableTrigger implements INodeType {
 				description: 'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 			},
 			{
-				displayName: 'Include Previous Values',
+				displayName: 'Include Previous Cell Values?',
 				name: 'includePreviousValues',
 				type: 'boolean',
 				default: true,
@@ -111,6 +110,11 @@ export class AirtableTrigger implements INodeType {
 						name: 'Record Updated',
 						value: 'update',
 						description: 'Trigger when a record is updated',
+					},
+					{
+						name: 'Record Deleted',
+						value: 'remove',
+						description: 'Trigger when a record is deleted',
 					},
 				],
 				required: true,
@@ -143,16 +147,32 @@ export class AirtableTrigger implements INodeType {
 				const baseId = this.getNodeParameter('base', '') as string;
 
 				if (!baseId) {
+					console.log('No base ID provided');
 					return [];
 				}
 
 				try {
-					const tables = await getTables.call(this, baseId);
-					console.log('Loaded tables:', tables);
+					// Direct API call to get tables
+					const endpoint = `/meta/bases/${baseId}/tables`;
+					console.log(`Calling API endpoint: ${endpoint}`);
+					const response = await airtableApiRequest.call(this, 'GET', endpoint);
 
-					return tables.map(table => ({
+					console.log('Tables API response received');
+
+					if (!response.tables || !Array.isArray(response.tables)) {
+						console.error('Invalid response format: tables array is missing');
+						return [];
+					}
+
+					console.log(`Loaded ${response.tables.length} tables from base ${baseId}`);
+					response.tables.forEach((table: any) => {
+						console.log(`- Table: ${table.name}, ID: ${table.id}, Fields: ${table.fields ? table.fields.length : 0}`);
+					});
+
+					return response.tables.map((table: any) => ({
 						name: table.name,
 						value: table.id,
+						description: `${table.fields ? table.fields.length : 0} fields available`,
 					}));
 				} catch (error) {
 					console.error('Error loading tables:', error);
@@ -161,17 +181,24 @@ export class AirtableTrigger implements INodeType {
 			},
 
 			async getFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				console.log('Loading fields...');
+				console.log('getFields method called in node');
 				const baseId = this.getNodeParameter('base', '') as string;
 				const tableId = this.getNodeParameter('table', '') as string;
 
 				if (!baseId || !tableId) {
+					console.log('Missing baseId or tableId');
 					return [];
 				}
 
 				try {
+					console.log(`Requesting fields for base: ${baseId}, table: ${tableId}`);
 					const fields = await getFields.call(this, baseId, tableId);
-					console.log('Loaded fields:', fields);
+					console.log(`Retrieved ${fields.length} fields:`, fields);
+
+					if (!fields || fields.length === 0) {
+						console.log('No fields returned from API');
+						return [];
+					}
 
 					return fields.map(field => ({
 						name: field.name,
@@ -179,7 +206,7 @@ export class AirtableTrigger implements INodeType {
 						description: `Type: ${field.type}`,
 					}));
 				} catch (error) {
-					console.error('Error loading fields:', error);
+					console.error('Error in getFields:', error);
 					return [];
 				}
 			},
@@ -261,6 +288,13 @@ export class AirtableTrigger implements INodeType {
 					// Add fields to watch if specified
 					if (fieldsToWatch && fieldsToWatch.length > 0) {
 						body.specification.options.filters.watchDataInFieldIds = fieldsToWatch;
+					}
+
+					// Add fields to include in the output
+					const fieldsToInclude = this.getNodeParameter('fieldsToInclude', []) as string[];
+					if (fieldsToInclude && fieldsToInclude.length > 0) {
+						body.specification.options.includes.includeCellValuesInFieldIds = fieldsToInclude;
+						console.log('Including these fields in the webhook payload:', fieldsToInclude);
 					}
 
 					console.log('Creating webhook with body:', body);
@@ -384,6 +418,8 @@ export class AirtableTrigger implements INodeType {
 			const formattedPayloads = [];
 			const fieldsToInclude = (webhookData.fieldsToInclude as string[]) || [];
 
+			console.log('Fields to include in output:', fieldsToInclude);
+
 			for (const payload of payloadsResponse.payloads) {
 				console.log('Processing payload:', payload);
 
@@ -393,12 +429,16 @@ export class AirtableTrigger implements INodeType {
 				}
 
 				for (const tableId in payload.changedTablesById) {
+					console.log(`Processing changes for table: ${tableId}`);
 					if (!webhookData.tableId || tableId === webhookData.tableId) {
 						const tableData = payload.changedTablesById[tableId];
 						const changedRecords = tableData.changedRecordsById;
 
+						console.log(`Found ${Object.keys(changedRecords).length} changed records in table ${tableId}`);
+
 						// Extract field changes
 						const fieldInfos = extractFieldInfo(changedRecords, fieldsToInclude);
+						console.log(`Extracted ${fieldInfos.length} field info entries with included data`);
 
 						for (const fieldInfo of fieldInfos) {
 							formattedPayloads.push({

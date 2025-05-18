@@ -1,8 +1,8 @@
-import { 
-  IExecuteFunctions, 
-  IHookFunctions, 
-  IDataObject, 
-  ILoadOptionsFunctions, 
+import {
+  IExecuteFunctions,
+  IHookFunctions,
+  IDataObject,
+  ILoadOptionsFunctions,
   IWebhookFunctions,
   IHttpRequestOptions,
   IHttpRequestMethods
@@ -20,7 +20,7 @@ export async function airtableApiRequest(
 	uri?: string,
 ): Promise<any> {
 	const credentials = await this.getCredentials('airtableApi');
-	
+
   // Convert the method string to IHttpRequestMethods type
   const httpMethod = method as IHttpRequestMethods;
 
@@ -48,7 +48,7 @@ export async function airtableApiRequest(
   options.json = true;
 
 	console.log(`Airtable API Request: ${method} ${options.url}`, { query, body });
-	
+
 	try {
 		const response = await this.helpers.request!(options);
 		console.log('Airtable API Response:', response);
@@ -57,6 +57,23 @@ export async function airtableApiRequest(
 		console.error('Airtable API Error:', error);
 		throw error;
 	}
+}
+
+/**
+ * Helper function to extract fields for a specific table
+ */
+function getFieldsByTableId(tableId: string, data: any) {
+  // Validate inputs
+  if (!tableId || !data || !data.tables || !Array.isArray(data.tables)) {
+    console.log('Invalid data structure for getFieldsByTableId', { tableId, dataKeys: data ? Object.keys(data) : null });
+    return null;
+  }
+
+  // Find the table with the matching ID
+  const table = data.tables.find((table: any) => table.id === tableId);
+
+  // Return the fields array if table found, otherwise null
+  return table ? table.fields : null;
 }
 
 /**
@@ -69,21 +86,40 @@ export async function getBases(this: ILoadOptionsFunctions): Promise<Array<{ id:
 }
 
 /**
- * Load all tables of a base
- */
-export async function getTables(this: ILoadOptionsFunctions, baseId: string): Promise<Array<{ id: string; name: string }>> {
-	const endpoint = `/meta/bases/${baseId}/tables`;
-	const { tables } = await airtableApiRequest.call(this, 'GET', endpoint);
-	return tables;
-}
-
-/**
  * Load all fields of a table
  */
 export async function getFields(this: ILoadOptionsFunctions, baseId: string, tableId: string): Promise<Array<{ id: string; name: string; type: string }>> {
-	const endpoint = `/meta/bases/${baseId}/tables/${tableId}/fields`;
-	const { fields } = await airtableApiRequest.call(this, 'GET', endpoint);
-	return fields;
+	try {
+		console.log(`Loading fields for base: ${baseId}, table: ${tableId}`);
+		const endpoint = `/meta/bases/${baseId}/tables`;
+
+		console.log(`Calling API endpoint: ${endpoint}`);
+		const response = await airtableApiRequest.call(this, 'GET', endpoint);
+
+		console.log('Base schema response received, extracting fields for table:', tableId);
+
+		// Use the helper function to extract fields
+		const fields = getFieldsByTableId(tableId, response);
+
+		if (!fields) {
+			console.error(`No fields found for table ID: ${tableId}`);
+			return [];
+		}
+
+		console.log(`Found ${fields.length} fields for table ${tableId}`);
+		fields.forEach((field: any, index: number) => {
+			console.log(`Field ${index + 1}: id=${field.id}, name=${field.name}, type=${field.type || 'unknown'}`);
+		});
+
+		return fields.map((field: any) => ({
+			id: field.id,
+			name: field.name,
+			type: field.type || 'unknown',
+		}));
+	} catch (error) {
+		console.error('Error loading fields:', error);
+		throw error;
+	}
 }
 
 /**
@@ -100,6 +136,10 @@ export function extractFieldInfo(
 		const recordData = changedRecordsById[recordId];
 		const { current, previous, unchanged } = recordData;
 
+		console.log('Current data:', current);
+		console.log('Previous data:', previous);
+		console.log('Unchanged data:', unchanged);
+
 		// Process each changed field
 		if (current && current.cellValuesByFieldId) {
 			for (const fieldId in current.cellValuesByFieldId) {
@@ -113,23 +153,28 @@ export function extractFieldInfo(
 
 				// Only include if values are different
 				if (JSON.stringify(currentValue) !== JSON.stringify(previousValue)) {
-					const includedData: Record<string, any> = {};
+					// Create includedData as an array of objects with fieldId and value
+					const includedData: Array<{fieldId: string, value: any}> = [];
 
-					// Add fields to include if they exist in unchanged or current data
-					if (fieldsToInclude.length > 0) {
-						fieldsToInclude.forEach((includeFieldId) => {
-							if (unchanged && unchanged.cellValuesByFieldId && includeFieldId in unchanged.cellValuesByFieldId) {
-								includedData[includeFieldId] = unchanged.cellValuesByFieldId[includeFieldId];
-							} else if (current && current.cellValuesByFieldId && includeFieldId in current.cellValuesByFieldId) {
-								includedData[includeFieldId] = current.cellValuesByFieldId[includeFieldId];
-							}
-						});
+					console.log('Processing unchanged data for record:', recordId);
+
+					// If there's unchanged data, include it in the output
+					if (unchanged && unchanged.cellValuesByFieldId) {
+						console.log('Unchanged data found with fields:', Object.keys(unchanged.cellValuesByFieldId));
+
+						// Use Object.entries to iterate through all key-value pairs in the object
+						for (const [fieldId, value] of Object.entries(unchanged.cellValuesByFieldId)) {
+							includedData.push({ fieldId, value });
+							console.log(`Added unchanged field ${fieldId} with value:`, value);
+						}
+					} else {
+						console.log('No unchanged data found for record:', recordId);
 					}
 
-					results.push({
+					// Create the result entry
+					const result = {
 						recordId,
 						fieldChanged: {
-							name: fieldsByIdMap[fieldId]?.name || fieldId,
 							id: fieldId,
 						},
 						values: {
@@ -137,7 +182,10 @@ export function extractFieldInfo(
 							previous: previousValue,
 						},
 						includedData,
-					});
+					};
+
+					console.log(`Created result with ${includedData.length} included fields:`, result);
+					results.push(result);
 				}
 			}
 		}

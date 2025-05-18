@@ -1,12 +1,12 @@
 {
-  "name": "n8n-nodes-instant-airtable-trigger",
-  "version": "0.1.3",
-  "description": "n8n node for Airtable webhook triggers",
+  "name": "n8n-nodes-vwork-airtable-instant-trigger-v3",
+  "version": "1.0.0",
+  "description": "N8N node for Airtable instant webhook triggers. Made by vwork Digital.",
   "keywords": [
     "n8n-community-node-package"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/jacobvendramin/n8n-nodes-airtable-webhook-trigger",
+  "homepage": "https://www.npmjs.com/package/instant-airtable-trigger",
   "author": {
     "name": "Jacob Vendramin",
     "email": "jacob@vwork.digital"

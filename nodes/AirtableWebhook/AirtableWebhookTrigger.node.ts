@@ -12,9 +12,9 @@ import { airtableApiRequest } from './GenericFunctions';
 
 export class AirtableWebhookTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Airtable Webhook Trigger',
+		displayName: 'vwork Instant Airtable Trigger',
 		name: 'airtableWebhookTrigger',
-		icon: 'file:airtable.svg',
+		icon: 'file:node-logo.svg',
 		group: ['trigger'],
 		version: 1,
 		description: 'Handle Airtable events via webhooks',
@@ -198,7 +198,7 @@ export class AirtableWebhookTrigger implements INodeType {
 				const baseId = this.getNodeParameter('baseId') as string;
 
 				console.log('Checking if webhook exists, webhookId:', webhookData.webhookId);
-				
+
 				// If we don't have a webhookId stored, it can't exist
 				if (webhookData.webhookId === undefined) {
 					return false;
@@ -209,7 +209,7 @@ export class AirtableWebhookTrigger implements INodeType {
 					const endpoint = `/bases/${baseId}/webhooks`;
 					const response = await airtableApiRequest.call(this, 'GET', endpoint);
 					console.log('Webhooks list response:', JSON.stringify(response));
-					
+
 					// Check if our webhook ID exists in the list
 					if (response.webhooks) {
 						for (const webhook of response.webhooks) {
@@ -219,7 +219,7 @@ export class AirtableWebhookTrigger implements INodeType {
 							}
 						}
 					}
-					
+
 					console.log('Webhook not found in list');
 					return false;
 				} catch (error) {
@@ -286,7 +286,7 @@ export class AirtableWebhookTrigger implements INodeType {
 
 				// Add includes if specified
 				const includesOptions: IDataObject = {};
-				
+
 				if (advancedOptions.includePreviousCellValues === true) {
 					includesOptions.includePreviousCellValues = true;
 				}
@@ -322,14 +322,14 @@ export class AirtableWebhookTrigger implements INodeType {
 					// Create the webhook
 					const endpoint = `/bases/${baseId}/webhooks`;
 					const response = await airtableApiRequest.call(this, 'POST', endpoint, body);
-					
+
 					console.log('Webhook creation response:', JSON.stringify(response, null, 2));
-					
+
 					// Store webhook data
 					webhookData.webhookId = response.id;
 					webhookData.macSecretBase64 = response.macSecretBase64;
 					webhookData.baseId = baseId;
-					
+
 					return true;
 				} catch (error) {
 					console.log('Webhook creation error:', error);
@@ -351,12 +351,12 @@ export class AirtableWebhookTrigger implements INodeType {
 					// Delete the webhook
 					const endpoint = `/bases/${baseId}/webhooks/${webhookData.webhookId}`;
 					await airtableApiRequest.call(this, 'DELETE', endpoint);
-					
+
 					// Clear webhook data
 					delete webhookData.webhookId;
 					delete webhookData.macSecretBase64;
 					delete webhookData.baseId;
-					
+
 					return true;
 				} catch (error) {
 					console.log('Webhook deletion error:', error);
@@ -378,17 +378,17 @@ export class AirtableWebhookTrigger implements INodeType {
 		// Verify the webhook signature if available
 		if (webhookData.macSecretBase64 && headerData['x-airtable-signature']) {
 			const signature = headerData['x-airtable-signature'] as string;
-			
+
 			// Import createHmac only when needed to avoid unused import error
 			const { createHmac } = await import('crypto');
-			
+
 			const computedSignature = createHmac('sha256', Buffer.from(webhookData.macSecretBase64 as string, 'base64'))
 				.update(req.rawBody)
 				.digest('base64');
-			
+
 			console.log('Expected signature:', computedSignature);
 			console.log('Received signature:', signature);
-			
+
 			if (signature !== computedSignature) {
 				console.log('Invalid signature, ignoring webhook');
 				return {};
