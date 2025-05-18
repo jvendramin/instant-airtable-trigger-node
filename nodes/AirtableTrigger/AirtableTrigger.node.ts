@@ -6,6 +6,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 	IWebhookResponseData,
+	IDataObject,
 } from 'n8n-workflow';
 import { NodeConnectionType } from 'n8n-workflow';
 
@@ -120,6 +121,111 @@ export class AirtableTrigger implements INodeType {
 				required: true,
 				default: ['update'],
 				description: 'The events to listen for',
+			},
+			{
+				displayName: 'Additional Fields',
+				name: 'additionalFields',
+				type: 'collection',
+				placeholder: 'Add Field',
+				default: {},
+				options: [
+					{
+						displayName: 'Data Types',
+						name: 'dataTypes',
+						type: 'multiOptions',
+						options: [
+							{
+								name: 'Table Data (Record and Cell Value Changes)',
+								value: 'tableData',
+							},
+							{
+								name: 'Table Fields (Field Changes)',
+								value: 'tableFields',
+							},
+							{
+								name: 'Table Metadata (Table Name and Description Changes)',
+								value: 'tableMetadata',
+							},
+						],
+						default: ['tableData'],
+						description: 'Only generate payloads that contain changes affecting objects of these types',
+					},
+					{
+						displayName: 'From Sources',
+						name: 'fromSources',
+						type: 'multiOptions',
+						options: [
+							{
+								name: 'Anonymous User',
+								value: 'anonymousUser',
+							},
+							{
+								name: 'Automation (Via Automation Action)',
+								value: 'automation',
+							},
+							{
+								name: 'Client (User via Web or Mobile Clients)',
+								value: 'client',
+							},
+							{
+								name: 'Form Page Submission (Interface Forms)',
+								value: 'formPageSubmission',
+							},
+							{
+								name: 'Form Submission (Form View)',
+								value: 'formSubmission',
+							},
+							{
+								name: 'Public API (Via Airtable API)',
+								value: 'publicApi',
+							},
+							{
+								name: 'Sync (Airtable Sync)',
+								value: 'sync',
+							},
+							{
+								name: 'System (System Events)',
+								value: 'system',
+							},
+							{
+								name: 'Unknown',
+								value: 'unknown',
+							},
+						],
+						default: [],
+						description: 'Only generate payloads for changes from these sources. If omitted, changes from all sources are reported.',
+					},
+					{
+						displayName: 'Source Options',
+						name: 'sourceOptions',
+						type: 'string',
+						default: '',
+						placeholder: '{"formPageSubmission":{"pageId":"page123"},"formSubmission":{"viewId":"view456"}}',
+						description: 'Additional options for source filtering in JSON format. Allows filtering form view submissions by ViewId, or interface form submissions by PageId.',
+					},
+					{
+						displayName: 'Watch Data in Field IDs',
+						name: 'watchDataInFieldIds',
+						type: 'multiOptions',
+						typeOptions: {
+							loadOptionsMethod: 'getFields',
+							loadOptionsDependsOn: ['base', 'table'],
+						},
+						default: [],
+						description: 'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+					},
+					{
+						displayName: 'Watch Schemas of Field IDs',
+						name: 'watchSchemasOfFieldIds',
+						type: 'multiOptions',
+						typeOptions: {
+							loadOptionsMethod: 'getFields',
+							loadOptionsDependsOn: ['base', 'table'],
+						},
+						default: [],
+						description: 'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+					},
+				],
 			},
 		],
 	};
@@ -257,17 +363,20 @@ export class AirtableTrigger implements INodeType {
 				const tableId = this.getNodeParameter('table') as string;
 				const fieldsToWatch = this.getNodeParameter('fieldsToWatch', []) as string[];
 				const includePreviousValues = this.getNodeParameter('includePreviousValues') as boolean;
+				const eventTypes = this.getNodeParameter('eventTypes', []) as string[];
 
 				console.log('Parameters:', {
 					baseId,
 					tableId,
 					fieldsToWatch,
 					includePreviousValues,
+					eventTypes,
 					webhookUrl
 				});
 
 				try {
 					const endpoint = `/bases/${baseId}/webhooks`;
+					const additionalFields = this.getNodeParameter('additionalFields', {}) as IDataObject;
 
 					// Prepare the webhook specification
 					const body: any = {
@@ -276,7 +385,8 @@ export class AirtableTrigger implements INodeType {
 							options: {
 								filters: {
 									dataTypes: ['tableData'],
-									recordChangeScope: tableId
+									recordChangeScope: tableId,
+									changeTypes: eventTypes,
 								},
 								includes: {
 									includePreviousCellValues: includePreviousValues
@@ -297,6 +407,46 @@ export class AirtableTrigger implements INodeType {
 						console.log('Including these fields in the webhook payload:', fieldsToInclude);
 					}
 
+					// Process additional fields
+					console.log('Processing additional fields:', additionalFields);
+
+					// Add dataTypes if specified
+					if (additionalFields.dataTypes && Array.isArray(additionalFields.dataTypes) && additionalFields.dataTypes.length > 0) {
+						body.specification.options.filters.dataTypes = additionalFields.dataTypes;
+						console.log('Setting dataTypes:', additionalFields.dataTypes);
+					}
+
+					// Add fromSources if specified
+					if (additionalFields.fromSources && Array.isArray(additionalFields.fromSources) && additionalFields.fromSources.length > 0) {
+						body.specification.options.filters.fromSources = additionalFields.fromSources;
+						console.log('Setting fromSources:', additionalFields.fromSources);
+					}
+
+					// Add sourceOptions if specified
+					if (additionalFields.sourceOptions) {
+						try {
+							// Parse the sourceOptions JSON string to an object
+							const sourceOptions = JSON.parse(additionalFields.sourceOptions as string);
+							body.specification.options.filters.sourceOptions = sourceOptions;
+							console.log('Setting sourceOptions:', sourceOptions);
+						} catch (error) {
+							console.error('Error parsing sourceOptions JSON:', error);
+							// Continue without adding sourceOptions if it's invalid JSON
+						}
+					}
+
+					// Add watchDataInFieldIds from additional fields if specified
+					if (additionalFields.watchDataInFieldIds && Array.isArray(additionalFields.watchDataInFieldIds) && additionalFields.watchDataInFieldIds.length > 0) {
+						body.specification.options.filters.watchDataInFieldIds = additionalFields.watchDataInFieldIds;
+						console.log('Setting watchDataInFieldIds from additional fields:', additionalFields.watchDataInFieldIds);
+					}
+
+					// Add watchSchemasOfFieldIds if specified
+					if (additionalFields.watchSchemasOfFieldIds && Array.isArray(additionalFields.watchSchemasOfFieldIds) && additionalFields.watchSchemasOfFieldIds.length > 0) {
+						body.specification.options.filters.watchSchemasOfFieldIds = additionalFields.watchSchemasOfFieldIds;
+						console.log('Setting watchSchemasOfFieldIds:', additionalFields.watchSchemasOfFieldIds);
+					}
+
 					console.log('Creating webhook with body:', body);
 
 					const response = await airtableApiRequest.call(this, 'POST', endpoint, body);
@@ -308,11 +458,15 @@ export class AirtableTrigger implements INodeType {
 					webhookData.macSecretBase64 = response.macSecretBase64;
 					webhookData.lastCursor = 1; // Start with cursor 1
 					webhookData.fieldsToInclude = this.getNodeParameter('fieldsToInclude', []) as string[];
+					webhookData.additionalFields = additionalFields;
+					webhookData.eventTypes = eventTypes;
 
 					console.log('Webhook created successfully:', {
 						webhookId: webhookData.webhookId,
 						baseId: webhookData.baseId,
 						macSecret: webhookData.macSecretBase64,
+						additionalFields: webhookData.additionalFields,
+						eventTypes: webhookData.eventTypes
 					});
 
 					return true;
@@ -344,6 +498,8 @@ export class AirtableTrigger implements INodeType {
 					delete webhookData.macSecretBase64;
 					delete webhookData.lastCursor;
 					delete webhookData.fieldsToInclude;
+					delete webhookData.additionalFields;
+					delete webhookData.eventTypes;
 
 					console.log('Webhook deleted successfully');
 
