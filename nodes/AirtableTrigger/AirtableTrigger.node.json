@@ -3,17 +3,18 @@
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": [
-		"Communication"
+		"Communication",
+		"Data & Storage"
 	],
 	"resources": {
 		"credentialDocumentation": [
 			{
-				"url": "https://airtable.com/developers/web/api/authentication"
+				"url": "https://docs.airtable.com/user-guide/getting-set-up/personal-access-tokens"
 			}
 		],
 		"primaryDocumentation": [
 			{
-				"url": "https://airtable.com/developers/web/api/webhooks"
+				"url": "https://docs.airtable.com/developer-tools/webhooks"
 			}
 		]
 	}

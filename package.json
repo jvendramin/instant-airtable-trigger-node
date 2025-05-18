@@ -1,6 +1,6 @@
 {
-  "name": "n8n-nodes-airtable-webhook-instant-trigger",
-  "version": "0.1.1",
+  "name": "n8n-nodes-instant-airtable-trigger",
+  "version": "0.1.2",
   "description": "n8n node for Airtable webhook triggers",
   "keywords": [
     "n8n-community-node-package"
@@ -36,7 +36,7 @@
       "dist/credentials/AirtableApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/AirtableWebhook/AirtableWebhookTrigger.node.js"
+      "dist/nodes/AirtableTrigger/AirtableTrigger.node.js"
     ]
   },
   "devDependencies": {
