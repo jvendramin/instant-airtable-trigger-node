@@ -1,0 +1,21 @@
+{
+  "node": "n8n-nodes-base.airtableWebhookTrigger",
+  "nodeVersion": "1.0",
+  "codexVersion": "1.0",
+  "categories": [
+    "Data & Storage",
+    "Communication"
+  ],
+  "resources": {
+    "credentialDocumentation": [
+      {
+        "url": "https://airtable.com/developers/web/api"
+      }
+    ],
+    "primaryDocumentation": [
+      {
+        "url": "https://airtable.com/developers/web/api/webhook-payloads"
+      }
+    ]
+  }
+}

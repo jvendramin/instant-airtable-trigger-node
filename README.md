@@ -1,46 +1,80 @@
-![Banner image](https://user-images.githubusercontent.com/10284570/173569848-c624317f-42b1-45a6-ab09-f0ea3c247648.png)
+# n8n-nodes-airtable-webhook-trigger
 
-# n8n-nodes-starter
+This is an n8n community node for triggering workflows based on Airtable webhooks. It allows you to watch for changes in Airtable tables and trigger workflows when records are created or updated.
 
-This repo contains example nodes to help you get started building your own custom integrations for [n8n](https://n8n.io). It includes the node linter and other dependencies.
+[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
-To make your custom node available to the community, you must create it as an npm package, and [submit it to the npm registry](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry).
+[Installation](#installation)  
+[Operations](#operations)  
+[Credentials](#credentials)  
+[Compatibility](#compatibility)  
+[Usage](#usage)  
+[Resources](#resources)  
+[Version history](#version-history)  
 
-## Prerequisites
+## Installation
 
-You need the following installed on your development machine:
+Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
 
-* [git](https://git-scm.com/downloads)
-* Node.js and pnpm. Minimum version Node 20. You can find instructions on how to install both using nvm (Node Version Manager) for Linux, Mac, and WSL [here](https://github.com/nvm-sh/nvm). For Windows users, refer to Microsoft's guide to [Install NodeJS on Windows](https://docs.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows).
-* Install n8n with:
-  ```
-  npm install n8n -g
-  ```
-* Recommended: follow n8n's guide to [set up your development environment](https://docs.n8n.io/integrations/creating-nodes/build/node-development-environment/).
+## Operations
 
-## Using this starter
+- Watch for record creation
+- Watch for record updates
+- Specify fields to watch for changes
+- Include additional field data in the output
 
-These are the basic steps for working with the starter. For detailed guidance on creating and publishing nodes, refer to the [documentation](https://docs.n8n.io/integrations/creating-nodes/).
+## Credentials
 
-1. [Generate a new repository](https://github.com/n8n-io/n8n-nodes-starter/generate) from this template repository.
-2. Clone your new repo:
-   ```
-   git clone https://github.com/<your organization>/<your-repo-name>.git
-   ```
-3. Run `npm i` to install dependencies.
-4. Open the project in your editor.
-5. Browse the examples in `/nodes` and `/credentials`. Modify the examples, or replace them with your own nodes.
-6. Update the `package.json` to match your details.
-7. Run `npm lint` to check for errors or `npm lintfix` to automatically fix errors when possible.
-8. Test your node locally. Refer to [Run your node locally](https://docs.n8n.io/integrations/creating-nodes/test/run-node-locally/) for guidance.
-9. Replace this README with documentation for your node. Use the [README_TEMPLATE](README_TEMPLATE.md) to get started.
-10. Update the LICENSE file to use your details.
-11. [Publish](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry) your package to npm.
+You need an Airtable Personal Access Token to use this node.
 
-## More information
+1. Go to your [Airtable account page](https://airtable.com/account)
+2. In the API section, create a Personal Access Token with permissions to access your bases
+3. Use the token in the n8n credentials for this node
 
-Refer to our [documentation on creating nodes](https://docs.n8n.io/integrations/creating-nodes/) for detailed information on building your own nodes.
+## Compatibility
 
-## License
+Tested with n8n version 1.92.2
 
-[MIT](https://github.com/n8n-io/n8n-nodes-starter/blob/master/LICENSE.md)
+## Usage
+
+1. Create a new workflow
+2. Add an "Airtable Webhook Trigger" node as the trigger
+3. Configure the credentials
+4. Select the base and table you want to monitor
+5. Select fields to watch for changes
+6. Select any additional fields to include in the output
+7. Choose if you want to include previous values in the output
+8. Select which events to trigger on (record creation and/or updates)
+9. Save the workflow and activate it
+
+The node will then trigger your workflow when the specified changes occur in your Airtable table.
+
+### Output Format
+
+When triggered, the node outputs data in this format:
+
+```json
+{
+  "recordId": "recXXXXXXXXXXXXXX",
+  "fieldChanged": "Field Name",
+  "fieldChangedId": "fldXXXXXXXXXXXXXX",
+  "previousValue": "Previous value (if available)",
+  "currentValue": "Current value",
+  "includedData": {
+    "Field 1": "Value 1",
+    "Field 2": "Value 2"
+  }
+}
+```
+
+## Resources
+
+* [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
+* [Airtable API documentation](https://airtable.com/developers/web/api/introduction)
+* [Airtable webhooks documentation](https://airtable.com/developers/web/api/webhooks)
+
+## Version history
+
+### 0.1.0
+
+- Initial release
