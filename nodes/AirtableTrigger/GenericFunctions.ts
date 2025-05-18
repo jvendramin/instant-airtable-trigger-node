@@ -182,6 +182,7 @@ export function extractFieldInfo(
 							previous: previousValue,
 						},
 						includedData,
+						changeType: 'recordFieldValue',
 					};
 
 					console.log(`Created result with ${includedData.length} included fields:`, result);
@@ -192,4 +193,54 @@ export function extractFieldInfo(
 	}
 
 	return results;
+}
+
+/**
+ * Extract field schema change information from a payload
+ */
+export function extractFieldSchemaInfo(changedFieldsById: any): any[] {
+	const results: any[] = [];
+
+	console.log('Processing field schema changes:', changedFieldsById);
+
+	for (const fieldId in changedFieldsById) {
+		const fieldData = changedFieldsById[fieldId];
+		const { current, previous } = fieldData;
+
+		console.log(`Field schema change for field ${fieldId}:`, { current, previous });
+
+		const result = {
+			fieldId,
+			schemaChange: {
+				current: current || {},
+				previous: previous || {},
+			},
+			changeType: 'fieldSchema',
+		};
+
+		console.log('Created field schema change result:', result);
+		results.push(result);
+	}
+
+	return results;
+}
+
+/**
+ * Extract table metadata change information from a payload
+ */
+export function extractTableMetadataInfo(changedMetadata: any): any[] {
+	console.log('Processing table metadata changes:', changedMetadata);
+
+	const { current, previous } = changedMetadata;
+
+	const result = {
+		tableMetadataChange: {
+			current: current || {},
+			previous: previous || {},
+		},
+		changeType: 'tableMetadata',
+	};
+
+	console.log('Created table metadata change result:', result);
+	return [result];
 }

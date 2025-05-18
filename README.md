@@ -1,16 +1,26 @@
-# n8n-nodes-airtable-webhook-trigger
+# Instant Airtable Trigger by vwork Digital
 
-This is an n8n community node for triggering workflows based on Airtable webhooks. It allows you to watch for changes in Airtable tables and trigger workflows when records are created or updated.
+This is an n8n community node for instantly triggering workflows based on Airtable webhooks. It allows you to watch for changes in Airtable tables or fields, and trigger workflows when records, fields or tables changed.
+
+Need implementation help for your business? Want more n8n or no-code/low-code resources? [Visit our website](https://vwork.digital) now! Don't forget to subscribe to our newsletter.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
+[Important Notes](#important-notes)  
 [Installation](#installation)  
 [Operations](#operations)  
 [Credentials](#credentials)  
 [Compatibility](#compatibility)  
 [Usage](#usage)  
 [Resources](#resources)  
-[Version history](#version-history)  
+[Version history](#version-history)
+
+## Important Notes
+
+- When triggered this node uses 2 API calls to your Airtable base (list webhooks and list payloads).
+- Please be aware that Airtable limits 10 webhooks per base, [read more here](https://airtable.com/developers/web/api/create-a-webhook).
+- The access token you use for this node needs webhook read/write scopes.
+- Creator level permissions are required in order to register a webhook, [read more here](https://airtable.com/developers/web/api/create-a-webhook).
 
 ## Installation
 
@@ -24,6 +34,7 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 - Specify fields to watch for changes
 - Include additional field data in the output
 - Include previous cell values of changed fields in the output
+- Watch for field schema or table metadata changes
 
 ## Credentials
 
@@ -47,13 +58,14 @@ Tested with n8n version 1.92.2
 6. Select any additional fields to include in the output
 7. Choose if you want to include previous values in the output
 8. Select which events to trigger on (record creation and/or updates)
-9. Save the workflow and activate it
+9. Set any other additional fields to include in the Airtable webhook specification
+10. Save the workflow and activate it
 
 The node will then trigger your workflow when the specified changes occur in your Airtable table.
 
 ### Output Format
 
-When triggered, the node outputs data in this format:
+Example node output:
 
 ```json
 {
@@ -62,10 +74,13 @@ When triggered, the node outputs data in this format:
   "fieldChangedId": "fldXXXXXXXXXXXXXX",
   "previousValue": "Previous value (if available)",
   "currentValue": "Current value",
-  "includedData": {
-    "Field 1": "Value 1",
-    "Field 2": "Value 2"
-  }
+  "includedData": [
+		{
+    "Field 1": "Value 1"},
+		{
+			"Field 2": "Value 2"
+		}
+	]
 }
 ```
 
@@ -77,6 +92,6 @@ When triggered, the node outputs data in this format:
 
 ## Version history
 
-### 0.1.0
+### 1.0.0
 
 - Initial release

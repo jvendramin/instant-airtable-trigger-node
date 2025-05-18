@@ -13,20 +13,22 @@ import { NodeConnectionType } from 'n8n-workflow';
 import {
 	airtableApiRequest,
 	extractFieldInfo,
+	extractFieldSchemaInfo,
+	extractTableMetadataInfo,
 	getBases,
 	getFields
 } from './GenericFunctions';
 
 export class AirtableTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'vwork Instant Airtable Trigger',
+		displayName: 'Instant Airtable Trigger',
 		name: 'airtableTrigger',
 		icon: 'file:nodelogo.svg',
 		group: ['trigger'],
 		version: 1,
-		description: 'Handles Airtable events via webhooks',
+		description: 'Instantly handles Airtable events via webhooks. Made by vwork Digital.',
 		defaults: {
-			name: 'vwork Instant Airtable Trigger',
+			name: 'Instant Airtable Trigger',
 		},
 		inputs: [],
 		outputs: [{ type: NodeConnectionType.Main }],
@@ -202,17 +204,6 @@ export class AirtableTrigger implements INodeType {
 						default: '',
 						placeholder: '{"formPageSubmission":{"pageId":"page123"},"formSubmission":{"viewId":"view456"}}',
 						description: 'Additional options for source filtering in JSON format. Allows filtering form view submissions by ViewId, or interface form submissions by PageId.',
-					},
-					{
-						displayName: 'Watch Data in Field IDs',
-						name: 'watchDataInFieldIds',
-						type: 'multiOptions',
-						typeOptions: {
-							loadOptionsMethod: 'getFields',
-							loadOptionsDependsOn: ['base', 'table'],
-						},
-						default: [],
-						description: 'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 					},
 					{
 						displayName: 'Watch Schemas of Field IDs',
@@ -435,12 +426,6 @@ export class AirtableTrigger implements INodeType {
 						}
 					}
 
-					// Add watchDataInFieldIds from additional fields if specified
-					if (additionalFields.watchDataInFieldIds && Array.isArray(additionalFields.watchDataInFieldIds) && additionalFields.watchDataInFieldIds.length > 0) {
-						body.specification.options.filters.watchDataInFieldIds = additionalFields.watchDataInFieldIds;
-						console.log('Setting watchDataInFieldIds from additional fields:', additionalFields.watchDataInFieldIds);
-					}
-
 					// Add watchSchemasOfFieldIds if specified
 					if (additionalFields.watchSchemasOfFieldIds && Array.isArray(additionalFields.watchSchemasOfFieldIds) && additionalFields.watchSchemasOfFieldIds.length > 0) {
 						body.specification.options.filters.watchSchemasOfFieldIds = additionalFields.watchSchemasOfFieldIds;
@@ -588,24 +573,66 @@ export class AirtableTrigger implements INodeType {
 					console.log(`Processing changes for table: ${tableId}`);
 					if (!webhookData.tableId || tableId === webhookData.tableId) {
 						const tableData = payload.changedTablesById[tableId];
-						const changedRecords = tableData.changedRecordsById;
 
-						console.log(`Found ${Object.keys(changedRecords).length} changed records in table ${tableId}`);
+						// Process record changes (cell values)
+						if (tableData.changedRecordsById) {
+							const changedRecords = tableData.changedRecordsById;
+							console.log(`Found ${Object.keys(changedRecords).length} changed records in table ${tableId}`);
 
-						// Extract field changes
-						const fieldInfos = extractFieldInfo(changedRecords, fieldsToInclude);
-						console.log(`Extracted ${fieldInfos.length} field info entries with included data`);
+							// Extract field changes
+							const fieldInfos = extractFieldInfo(changedRecords, fieldsToInclude);
+							console.log(`Extracted ${fieldInfos.length} field info entries with included data`);
 
-						for (const fieldInfo of fieldInfos) {
-							formattedPayloads.push({
-								...fieldInfo,
-								changedBy: payload.actionMetadata?.sourceMetadata?.user ? {
-									userId: payload.actionMetadata.sourceMetadata.user.id,
-									userName: payload.actionMetadata.sourceMetadata.user.name,
-									userEmail: payload.actionMetadata.sourceMetadata.user.email,
-								} : undefined,
-								timestamp: payload.timestamp,
-							});
+							for (const fieldInfo of fieldInfos) {
+								formattedPayloads.push({
+									...fieldInfo,
+									tableId,
+									changedBy: payload.actionMetadata?.sourceMetadata?.user ? {
+										userId: payload.actionMetadata.sourceMetadata.user.id,
+										userName: payload.actionMetadata.sourceMetadata.user.name,
+										userEmail: payload.actionMetadata.sourceMetadata.user.email,
+									} : undefined,
+									timestamp: payload.timestamp,
+								});
+							}
+						}
+
+						// Process field schema changes
+						if (tableData.changedFieldsById) {
+							console.log(`Processing field schema changes for table ${tableId}`);
+							const fieldSchemaInfos = extractFieldSchemaInfo(tableData.changedFieldsById);
+
+							for (const fieldSchemaInfo of fieldSchemaInfos) {
+								formattedPayloads.push({
+									...fieldSchemaInfo,
+									tableId,
+									changedBy: payload.actionMetadata?.sourceMetadata?.user ? {
+										userId: payload.actionMetadata.sourceMetadata.user.id,
+										userName: payload.actionMetadata.sourceMetadata.user.name,
+										userEmail: payload.actionMetadata.sourceMetadata.user.email,
+									} : undefined,
+									timestamp: payload.timestamp,
+								});
+							}
+						}
+
+						// Process table metadata changes
+						if (tableData.changedMetadata) {
+							console.log(`Processing table metadata changes for table ${tableId}`);
+							const tableMetadataInfos = extractTableMetadataInfo(tableData.changedMetadata);
+
+							for (const tableMetadataInfo of tableMetadataInfos) {
+								formattedPayloads.push({
+									...tableMetadataInfo,
+									tableId,
+									changedBy: payload.actionMetadata?.sourceMetadata?.user ? {
+										userId: payload.actionMetadata.sourceMetadata.user.id,
+										userName: payload.actionMetadata.sourceMetadata.user.name,
+										userEmail: payload.actionMetadata.sourceMetadata.user.email,
+									} : undefined,
+									timestamp: payload.timestamp,
+								});
+							}
 						}
 					}
 				}
