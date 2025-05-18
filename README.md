@@ -6,6 +6,7 @@ Need implementation help for your business? Want more n8n or no-code/low-code re
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
+[Feedback](#feedback)  
 [Important Notes](#important-notes)  
 [Installation](#installation)  
 [Operations](#operations)  
@@ -14,6 +15,10 @@ Need implementation help for your business? Want more n8n or no-code/low-code re
 [Usage](#usage)  
 [Resources](#resources)  
 [Version history](#version-history)
+
+## Node Feedback
+
+Please submit feedback to us if you have any ideas to improve this node, or experience a bug by [submitting it to us here](https://vform.fillout.com/airtable-node-feedback).
 
 ## Important Notes
 
