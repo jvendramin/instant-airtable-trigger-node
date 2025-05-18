@@ -9,12 +9,12 @@
 	"resources": {
 		"credentialDocumentation": [
 			{
-				"url": "https://docs.airtable.com/user-guide/getting-set-up/personal-access-tokens"
+				"url": "https://www.npmjs.com/package/instant-airtable-trigger"
 			}
 		],
 		"primaryDocumentation": [
 			{
-				"url": "https://docs.airtable.com/developer-tools/webhooks"
+				"url": "https://www.npmjs.com/package/instant-airtable-trigger"
 			}
 		]
 	}
