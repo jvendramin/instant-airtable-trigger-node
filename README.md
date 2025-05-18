@@ -1,6 +1,6 @@
 # Instant Airtable Trigger by vwork Digital
 
-This is an n8n community node for instantly triggering workflows based on Airtable webhooks. It allows you to watch for changes in Airtable tables or fields, and trigger workflows when records, fields or tables changed.
+This is an n8n community node for instantly triggering workflows based on Airtable webhooks. It allows you to watch for changes in Airtable tables or fields, and trigger workflows when records, fields or tables changed. This is improved functionality over the native N8N Airtable trigger which relies on polling, usually meaning a delayed trigger on your workflow.
 
 Need implementation help for your business? Want more n8n or no-code/low-code resources? [Visit our website](https://vwork.digital) now! Don't forget to subscribe to our newsletter.
 
