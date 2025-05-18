@@ -12,9 +12,9 @@ import { airtableApiRequest } from './GenericFunctions';
 
 export class AirtableWebhookTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'vwork Instant Airtable Trigger',
+		displayName: 'Instant Airtable Trigger',
 		name: 'airtableWebhookTrigger',
-		icon: 'file:node-logo.svg',
+		icon: 'file:nodelogo.svg',
 		group: ['trigger'],
 		version: 1,
 		description: 'Handle Airtable events via webhooks',

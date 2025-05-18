@@ -20,8 +20,10 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 - Watch for record creation
 - Watch for record updates
+- Watch for record deletions
 - Specify fields to watch for changes
 - Include additional field data in the output
+- Include previous cell values of changed fields in the output
 
 ## Credentials
 

@@ -20,7 +20,7 @@ export class AirtableTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'vwork Instant Airtable Trigger',
 		name: 'airtableTrigger',
-		icon: 'file:node-logo.svg',
+		icon: 'file:nodelogo.svg',
 		group: ['trigger'],
 		version: 1,
 		description: 'Handles Airtable events via webhooks',
