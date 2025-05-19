@@ -56,7 +56,6 @@ export class FilloutTrigger implements INodeType {
 	methods = {
 		loadOptions: {
 			async getForms(this: ILoadOptionsFunctions) {
-				console.log('[Fillout Trigger] Loading forms...');
 				const credentials = await this.getCredentials('filloutApi');
 
 				try {
@@ -69,8 +68,6 @@ export class FilloutTrigger implements INodeType {
 						},
 						json: true,
 					});
-
-					console.log(`[Fillout Trigger] Loaded ${response.length} forms`);
 
 					const forms = response as Array<{ formId: string; name: string }>;
 
@@ -93,11 +90,8 @@ export class FilloutTrigger implements INodeType {
 				const webhookData = this.getWorkflowStaticData('node');
 
 				if (webhookData.webhookId === undefined) {
-					console.log('[Fillout Trigger] No webhook ID in static data, webhook does not exist');
 					return false;
 				}
-
-				console.log(`[Fillout Trigger] Checking if webhook with ID ${webhookData.webhookId} exists`);
 
 				// We don't have a specific webhook lookup endpoint in Fillout API
 				// So we'll just assume if we have a webhookId, it exists
@@ -109,8 +103,6 @@ export class FilloutTrigger implements INodeType {
 				const webhookData = this.getWorkflowStaticData('node');
 				const formId = this.getNodeParameter('formId') as string;
 				const credentials = await this.getCredentials('filloutApi');
-
-				console.log(`[Fillout Trigger] Creating webhook for form ${formId} with URL ${webhookUrl}`);
 
 				try {
 					const response = await this.helpers.request({
@@ -127,13 +119,9 @@ export class FilloutTrigger implements INodeType {
 						json: true,
 					});
 
-					console.log(`[Fillout Trigger] Webhook creation response: ${JSON.stringify(response)}`);
-
 					if (!response || !response.id) {
 						throw new Error(`Failed to create webhook for form ${formId}. Response: ${JSON.stringify(response)}`);
 					}
-
-					console.log(`[Fillout Trigger] Webhook created with ID: ${response.id}`);
 
 					// Store webhook ID and form ID to use for deactivation
 					webhookData.webhookId = response.id;
@@ -151,12 +139,10 @@ export class FilloutTrigger implements INodeType {
 				const credentials = await this.getCredentials('filloutApi');
 
 				if (webhookData.webhookId === undefined) {
-					console.log('[Fillout Trigger] No webhook ID found, skipping delete');
 					return false;
 				}
 
 				const webhookId = webhookData.webhookId as string;
-				console.log(`[Fillout Trigger] Deleting webhook with ID: ${webhookId}`);
 
 				try {
 					// Delete the webhook using the Fillout API
@@ -173,7 +159,7 @@ export class FilloutTrigger implements INodeType {
 						json: true,
 					});
 
-					console.log(`[Fillout Trigger] Webhook deletion response: ${JSON.stringify(response)}`);
+					console.log('[Fillout Trigger] Deleted webhook:', response);
 
 					// Clean up the static data
 					delete webhookData.webhookId;
@@ -193,24 +179,19 @@ export class FilloutTrigger implements INodeType {
 		try {
 			// Get the raw webhook data
 			let bodyData = this.getBodyData();
-			console.log('[Fillout Trigger] Webhook received, raw data type:', typeof bodyData);
-			
+
 			// If the data is a string, try to parse it as JSON
 			if (typeof bodyData === 'string') {
 				try {
 					bodyData = JSON.parse(bodyData);
-					console.log('[Fillout Trigger] Successfully parsed string data as JSON');
 				} catch (e) {
-					console.log('[Fillout Trigger] Could not parse string as JSON, using as is');
+					// Could not parse string as JSON, using as is
 				}
 			}
-			
+
 			// Ensure we're working with an object (not a string)
 			const processedData = (typeof bodyData === 'object') ? bodyData : { rawData: bodyData };
-			
-			// Log the processed data for debugging
-			console.log('[Fillout Trigger] Processed data:', JSON.stringify(processedData).slice(0, 200) + '...');
-			
+
 			// Return the data as a proper object for the workflow
 			return {
 				workflowData: [
@@ -219,7 +200,7 @@ export class FilloutTrigger implements INodeType {
 			};
 		} catch (error) {
 			console.error('[Fillout Trigger] Error processing webhook data:', error);
-			
+
 			// Even on error, return something usable
 			return {
 				workflowData: [

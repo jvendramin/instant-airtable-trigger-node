@@ -1,3 +1,6 @@
+/* eslint-disable n8n-nodes-base/node-execute-block-wrong-error-thrown */
+/* eslint-disable n8n-nodes-base/node-param-description-miscased-id */
+/* eslint-disable n8n-nodes-base/node-param-description-excess-final-period */
 import {
 	IExecuteFunctions,
 	ILoadOptionsFunctions,
@@ -99,7 +102,7 @@ export class Fillout implements INodeType {
 					{
 						name: 'Get',
 						value: 'get',
-						description: 'Get a submission',
+						description: 'Get a submission (set to always include edit link)',
 						action: 'Get a submission',
 					},
 					{
@@ -181,7 +184,7 @@ export class Fillout implements INodeType {
 						],
 					},
 				},
-				description: 'The submission to retrieve or delete',
+				description: 'The submission to retrieve (set to always include edit link)',
 			},
 			// Get all submissions options
 			{
@@ -282,7 +285,7 @@ export class Fillout implements INodeType {
 							},
 						],
 						default: 'finished',
-						description: 'Status of the submissions to retrieve',
+						description: 'Status of the submissions to retrieve (etching in progress submissions available on business plan or higher).',
 					},
 				],
 			},
@@ -331,13 +334,119 @@ export class Fillout implements INodeType {
 					},
 				],
 			},
+			// Optional fields for submission creation
+			{
+				displayName: 'Submission Time',
+				name: 'submissionTime',
+				type: 'dateTime',
+				default: '',
+				displayOptions: {
+					show: {
+						resource: [
+							'submission',
+						],
+						operation: [
+							'create',
+						],
+					},
+				},
+				description: 'The time when the submission was created',
+			},
+			{
+				displayName: 'Last Updated At',
+				name: 'lastUpdatedAt',
+				type: 'dateTime',
+				default: '',
+				displayOptions: {
+					show: {
+						resource: [
+							'submission',
+						],
+						operation: [
+							'create',
+						],
+					},
+				},
+				description: 'The time when the submission was last updated',
+			},
+			{
+				displayName: 'URL Parameters',
+				name: 'urlParameters',
+				placeholder: 'Add URL Parameter',
+				type: 'json',
+				displayOptions: {
+					show: {
+						resource: [
+							'submission',
+						],
+						operation: [
+							'create',
+						],
+					},
+				},
+				default: '',
+				description: 'URL parameters in JSON format. Must include id, name, and value fields. Example: [{"id":"email","name":"email","value":"example@example.com"}]',
+			},
+			{
+				displayName: 'Scheduling',
+				name: 'scheduling',
+				placeholder: 'Add Scheduling Details',
+				type: 'json',
+				displayOptions: {
+					show: {
+						resource: [
+							'submission',
+						],
+						operation: [
+							'create',
+						],
+					},
+				},
+				default: '',
+				description: 'Scheduling data in JSON format. Must include id and value fields. Example: [{"id":"nLJtxBJgPA","value":{"fullName":"John Smith","email":"john@smith.com","eventStartTime":"2024-05-20T09:00:00.000Z"}}]',
+			},
+			{
+				displayName: 'Payments',
+				name: 'payments',
+				placeholder: 'Add Payment Details',
+				type: 'json',
+				displayOptions: {
+					show: {
+						resource: [
+							'submission',
+						],
+						operation: [
+							'create',
+						],
+					},
+				},
+				default: '',
+				description: 'Payment data in JSON format. Must include id and value fields. Example: [{"id":"cLJtxCKgdL","value":{"paymentId":"pi_3PRF2cFMP2ckdpfG0s0ZdJqf"}}]',
+			},
+			{
+				displayName: 'Login',
+				name: 'login',
+				placeholder: 'Add Login Details',
+				type: 'json',
+				displayOptions: {
+					show: {
+						resource: [
+							'submission',
+						],
+						operation: [
+							'create',
+						],
+					},
+				},
+				default: '',
+				description: 'Login data in JSON format. Must contain email field. Example: {"email":"verified@email.com"}',
+			},
 		],
 	};
 
 	methods = {
 		loadOptions: {
 			async getForms(this: ILoadOptionsFunctions) {
-				console.log('[Fillout] Loading forms...');
 				const credentials = await this.getCredentials('filloutApi');
 
 				try {
@@ -350,8 +459,6 @@ export class Fillout implements INodeType {
 						},
 						json: true,
 					});
-
-					console.log(`[Fillout] Loaded ${response.length} forms`);
 
 					const forms = response as Array<{ formId: string; name: string }>;
 
@@ -370,11 +477,8 @@ export class Fillout implements INodeType {
 				const formId = this.getCurrentNodeParameter('formId') as string;
 
 				if (!formId) {
-					console.log('[Fillout] No form ID selected, returning empty options');
 					return [{ name: 'Please select a form first', value: '' }];
 				}
-
-				console.log(`[Fillout] Loading submissions for form ${formId}...`);
 
 				try {
 					// Get submissions from Fillout API
@@ -392,8 +496,6 @@ export class Fillout implements INodeType {
 					});
 
 					const data = response as { responses: Array<{ submissionId: string; submissionTime: string }> };
-
-					console.log(`[Fillout] Loaded ${data.responses?.length || 0} submissions`);
 
 					if (!data.responses || !data.responses.length) {
 						return [{ name: 'No submissions found', value: '' }];
@@ -418,13 +520,9 @@ export class Fillout implements INodeType {
 		const resource = this.getNodeParameter('resource', 0) as string;
 		const operation = this.getNodeParameter('operation', 0) as string;
 
-		console.log(`[Fillout] Executing ${resource}.${operation}...`);
-
 		// Implement each resource and operation
 		if (resource === 'form') {
 			if (operation === 'getAll') {
-				console.log('[Fillout] Getting all forms...');
-
 				try {
 					// Get all forms
 					const response = await this.helpers.request({
@@ -436,8 +534,6 @@ export class Fillout implements INodeType {
 						json: true,
 					});
 
-					console.log(`[Fillout] Retrieved ${response.length} forms`);
-
 					returnData.push({ json: { forms: response } });
 				} catch (error) {
 					console.error('[Fillout] Error getting forms:', error);
@@ -445,7 +541,6 @@ export class Fillout implements INodeType {
 				}
 			} else if (operation === 'getMetadata') {
 				const formId = this.getNodeParameter('formId', 0) as string;
-				console.log(`[Fillout] Getting metadata for form ${formId}...`);
 
 				try {
 					// Get form metadata
@@ -457,8 +552,6 @@ export class Fillout implements INodeType {
 						},
 						json: true,
 					});
-
-					console.log('[Fillout] Form metadata retrieved successfully');
 
 					returnData.push({ json: response });
 				} catch (error) {
@@ -478,8 +571,6 @@ export class Fillout implements INodeType {
 					sort?: string;
 					search?: string;
 				};
-
-				console.log(`[Fillout] Getting submissions for form ${formId}...`);
 
 				try {
 					// Set up query parameters
@@ -520,8 +611,6 @@ export class Fillout implements INodeType {
 						json: true,
 					});
 
-					console.log(`[Fillout] Retrieved ${response.responses?.length || 0} submissions`);
-
 					returnData.push({ json: response });
 				} catch (error) {
 					console.error('[Fillout] Error getting submissions:', error);
@@ -531,20 +620,16 @@ export class Fillout implements INodeType {
 				const formId = this.getNodeParameter('formId', 0) as string;
 				const submissionId = this.getNodeParameter('submissionId', 0) as string;
 
-				console.log(`[Fillout] Getting submission ${submissionId} from form ${formId}...`);
-
 				try {
 					// Get single submission
 					const response = await this.helpers.request({
 						method: 'GET',
-						url: `${credentials.apiUrl}/v1/api/forms/${formId}/submissions/${submissionId}`,
+						url: `${credentials.apiUrl}/v1/api/forms/${formId}/submissions/${submissionId}?includeEditLink=true`,
 						headers: {
 							Authorization: `Bearer ${credentials.apiKey}`,
 						},
 						json: true,
 					});
-
-					console.log('[Fillout] Submission retrieved successfully:', JSON.stringify(response));
 
 					// Return the submission directly - this ensures we just output the JSON
 					returnData.push({ json: response });
@@ -559,7 +644,130 @@ export class Fillout implements INodeType {
 					value: string;
 				}>;
 
-				console.log(`[Fillout] Creating submission for form ${formId}...`);
+				// Get the optional fields
+				const submissionTime = this.getNodeParameter('submissionTime', 0, '') as string;
+				const lastUpdatedAt = this.getNodeParameter('lastUpdatedAt', 0, '') as string;
+
+				// Get JSON fields
+				let urlParameters: Array<{id: string; name: string; value: string}> = [];
+				let scheduling: Array<{id: string; value: object}> = [];
+				let payments: Array<{id: string; value: object}> = [];
+				let login: {email: string} | null = null;
+
+				try {
+					const urlParametersJson = this.getNodeParameter('urlParameters', 0, '') as string;
+					if (urlParametersJson) {
+						urlParameters = JSON.parse(urlParametersJson);
+						console.log('[Fillout] URL Parameters:', urlParameters);
+
+						// Validate structure
+						if (!Array.isArray(urlParameters)) {
+							throw new NodeApiError(this.getNode(), {
+								message: 'URL Parameters must be an array',
+							} as JsonObject);
+						}
+
+						// Validate each item in the array
+						for (const param of urlParameters) {
+							if (!param.id || !param.name || !param.value) {
+								throw new NodeApiError(this.getNode(), {
+									message: 'Each URL Parameter must have id, name, and value fields',
+								} as JsonObject);
+							}
+						}
+					}
+				} catch (error) {
+					console.error('[Fillout] Error parsing URL Parameters JSON:', error);
+					throw new NodeApiError(this.getNode(), {
+						message: 'Invalid URL Parameters JSON format',
+						description: 'Please provide a valid JSON array with each item containing id, name, and value fields. Example: [{"id":"email","name":"email","value":"example@example.com"}]',
+					} as JsonObject);
+				}
+
+				try {
+					const schedulingJson = this.getNodeParameter('scheduling', 0, '') as string;
+					if (schedulingJson) {
+						scheduling = JSON.parse(schedulingJson);
+						console.log('[Fillout] Scheduling:', scheduling);
+
+						// Validate structure
+						if (!Array.isArray(scheduling)) {
+							throw new NodeApiError(this.getNode(), {
+								message: 'Scheduling must be an array',
+							} as JsonObject);
+						}
+
+						// Validate each item in the array
+						for (const item of scheduling) {
+							if (!item.id || !item.value || typeof item.value !== 'object') {
+								throw new NodeApiError(this.getNode(), {
+									message: 'Each scheduling item must have id and value (object) fields',
+								} as JsonObject);
+							}
+						}
+					}
+				} catch (error) {
+					console.error('[Fillout] Error parsing Scheduling JSON:', error);
+					throw new NodeApiError(this.getNode(), {
+						message: 'Invalid Scheduling JSON format',
+						description: 'Please provide a valid JSON array with each item containing id and value fields. Example: [{"id":"nLJtxBJgPA","value":{"fullName":"John Smith","email":"john@smith.com"}}]',
+					} as JsonObject);
+				}
+
+				try {
+					const paymentsJson = this.getNodeParameter('payments', 0, '') as string;
+					if (paymentsJson) {
+						payments = JSON.parse(paymentsJson);
+						console.log('[Fillout] Payments:', payments);
+
+						// Validate structure
+						if (!Array.isArray(payments)) {
+							throw new Error('Payments must be an array');
+						}
+
+						// Validate each item in the array
+						for (const item of payments) {
+							if (!item.id || !item.value || typeof item.value !== 'object') {
+								throw new Error('Each payment item must have id and value (object) fields');
+							}
+
+							// Verify paymentId exists in value
+							if (!(item.value as any).paymentId) {
+								throw new Error('Payment value must contain paymentId field');
+							}
+						}
+					}
+				} catch (error) {
+					console.error('[Fillout] Error parsing Payments JSON:', error);
+					throw new NodeApiError(this.getNode(), {
+						message: 'Invalid Payments JSON format',
+						description: 'Please provide a valid JSON array with each item containing id and value fields. The value object must contain paymentId. Example: [{"id":"cLJtxCKgdL","value":{"paymentId":"pi_3PRF2cFMP2ckdpfG0s0ZdJqf"}}]',
+					} as JsonObject);
+				}
+
+				try {
+					const loginJson = this.getNodeParameter('login', 0, '') as string;
+					if (loginJson) {
+						login = JSON.parse(loginJson);
+						console.log('[Fillout] Login:', login);
+
+						// Validate structure
+						if (typeof login !== 'object' || login === null) {
+							throw new Error('Login must be an object');
+						}
+
+						// Verify email exists
+						if (!login.email || typeof login.email !== 'string') {
+							throw new Error('Login object must contain email field as a string');
+						}
+					}
+				} catch (error) {
+					console.error('[Fillout] Error parsing Login JSON:', error);
+					throw new NodeApiError(this.getNode(), {
+						message: 'Invalid Login JSON format',
+						description: 'Please provide a valid JSON object with an email field. Example: {"email":"verified@email.com"}',
+					} as JsonObject);
+				}
 
 				try {
 					// Format questions for submission
@@ -568,15 +776,45 @@ export class Fillout implements INodeType {
 						value: q.value,
 					}));
 
+					// Create the submission object
+					const submissionObj: any = {
+						questions,
+					};
+
+					// Add optional fields if present
+					if (submissionTime) {
+						submissionObj.submissionTime = submissionTime;
+					} else {
+						// Default to current time if not provided
+						submissionObj.submissionTime = new Date().toISOString();
+					}
+
+					if (lastUpdatedAt) {
+						submissionObj.lastUpdatedAt = lastUpdatedAt;
+					}
+
+					if (urlParameters.length > 0) {
+						submissionObj.urlParameters = urlParameters;
+					}
+
+					if (scheduling.length > 0) {
+						submissionObj.scheduling = scheduling;
+					}
+
+					if (payments.length > 0) {
+						submissionObj.payments = payments;
+					}
+
+					if (login) {
+						submissionObj.login = login;
+					}
+
 					// Create submission
 					const body = {
-						submissions: [
-							{
-								questions,
-								submissionTime: new Date().toISOString(),
-							},
-						],
+						submissions: [submissionObj],
 					};
+
+					console.log('[Fillout] Creating submission with body:', JSON.stringify(body, null, 2));
 
 					const response = await this.helpers.request({
 						method: 'POST',
@@ -589,18 +827,22 @@ export class Fillout implements INodeType {
 						json: true,
 					});
 
-					console.log('[Fillout] Submission created successfully');
-
 					returnData.push({ json: response });
 				} catch (error) {
 					console.error('[Fillout] Error creating submission:', error);
+
+					// Log more details about the error
+					if (error.response) {
+						console.error('[Fillout] Error response data:', JSON.stringify(error.response.data));
+						console.error('[Fillout] Error response status:', error.response.status);
+						console.error('[Fillout] Error response headers:', JSON.stringify(error.response.headers));
+					}
+
 					throw new NodeApiError(this.getNode(), error as JsonObject);
 				}
 			} else if (operation === 'delete') {
 				const formId = this.getNodeParameter('formId', 0) as string;
 				const submissionId = this.getNodeParameter('submissionId', 0) as string;
-
-				console.log(`[Fillout] Deleting submission ${submissionId} from form ${formId}...`);
 
 				try {
 					// Delete submission
@@ -611,8 +853,6 @@ export class Fillout implements INodeType {
 							Authorization: `Bearer ${credentials.apiKey}`,
 						},
 					});
-
-					console.log('[Fillout] Submission deleted successfully');
 
 					returnData.push({
 						json: {

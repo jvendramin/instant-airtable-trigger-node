@@ -2,7 +2,7 @@
 
 These are n8n community nodes for triggering workflows based on Fillout submissions, and interacting with your Fillout forms directly in N8N.
 
-This node was created by Jacob @ vwork Digital and is NOT affiliated with Fillout in anyway. Please see [Node Feedback](#node-feedback) for how to submit feedback or issues about these nodes.
+This node was created by Jacob @ vwork Digital. **These nodes are NOT affiliated with Fillout in anyway**. Please see [Node Feedback](#node-feedback) for how to submit feedback or issues about these nodes.
 
 Need implementation help for your business? Want more n8n or no-code/low-code resources? Visit our website now! Don't forget to subscribe to our newsletter.
 
@@ -18,7 +18,7 @@ Need implementation help for your business? Want more n8n or no-code/low-code re
 [Version history](#version-history)
 
 ## Node Feedback
-Please submit feedback to us if you have any ideas to improve this node, or experience a bug by submitting it to us here.
+Please [submit feedback to us](https://vform.fillout.com/fillout-n8n-node-feedback) if you have any ideas to improve this node, or experience a bug.
 
 ## Installation
 
