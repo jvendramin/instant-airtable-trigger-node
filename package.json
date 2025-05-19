@@ -1,19 +1,21 @@
 {
-  "name": "n8n-nodes-vwork-instant-airtable-trigger",
+  "name": "n8n-nodes-fillout-vwork-digital-v3",
   "version": "1.0.0",
-  "description": "N8N node for Airtable instant webhook triggers, instead of relying on polling in the native N8N Airtable trigger node. Made by vwork Digital.",
+  "description": "N8N nodes for Fillout forms - includes both trigger and action nodes.",
   "keywords": [
-    "n8n-community-node-package"
+    "n8n-community-node-package",
+    "fillout",
+    "forms"
   ],
   "license": "MIT",
-  "homepage": "https://www.npmjs.com/package/n8n-nodes-vwork-instant-airtable-trigger",
+  "homepage": "https://www.fillout.com",
   "author": {
     "name": "Jacob Vendramin",
     "email": "jacob@vwork.digital"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jvendramin/instant-airtable-trigger-node.git"
+    "url": "https://github.com/yourusername/fillout-n8n-node.git"
   },
   "engines": {
     "node": ">=20.11.0"
@@ -33,10 +35,11 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "dist/credentials/AirtableApi.credentials.js"
+      "dist/credentials/FilloutApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/AirtableTrigger/AirtableTrigger.node.js"
+      "dist/nodes/Fillout/Fillout.node.js",
+      "dist/nodes/Fillout/FilloutTrigger.node.js"
     ]
   },
   "devDependencies": {

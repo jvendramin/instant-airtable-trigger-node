@@ -1,5 +1,7 @@
-const { AirtableTrigger } = require('./dist/nodes/AirtableTrigger/AirtableTrigger.node.js');
+const { Fillout } = require('./dist/nodes/Fillout/Fillout.node.js');
+const { FilloutTrigger } = require('./dist/nodes/Fillout/FilloutTrigger.node.js');
 
 module.exports = {
-	AirtableTrigger,
+	Fillout,
+	FilloutTrigger,
 };

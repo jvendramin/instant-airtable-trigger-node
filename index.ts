@@ -1,7 +1,9 @@
-import { AirtableWebhookTrigger } from './nodes/AirtableWebhook/AirtableWebhookTrigger.node';
-import { AirtableApi } from './credentials/AirtableApi.credentials';
+import { Fillout } from './nodes/Fillout/Fillout.node';
+import { FilloutTrigger } from './nodes/Fillout/FilloutTrigger.node';
+import { FilloutApi } from './credentials/FilloutApi.credentials';
 
 export {
-	AirtableWebhookTrigger,
-	AirtableApi,
+	Fillout,
+	FilloutTrigger,
+	FilloutApi,
 };

@@ -1,13 +1,9 @@
-# Instant Airtable Trigger by vwork Digital
+# Fillout Nodes for n8n
 
-This is an n8n community node for instantly triggering workflows based on Airtable webhooks. It allows you to watch for changes in Airtable tables or fields, and trigger workflows when records, fields or tables changed. This is improved functionality over the native N8N Airtable trigger which relies on polling, usually meaning a delayed trigger on your workflow.
-
-Need implementation help for your business? Want more n8n or no-code/low-code resources? [Visit our website](https://vwork.digital) now! Don't forget to subscribe to our newsletter.
+This is an n8n community node package providing integration with [Fillout](https://www.fillout.com) forms. It includes both trigger and action nodes for working with Fillout forms and form submissions.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
-[Feedback](#feedback)  
-[Important Notes](#important-notes)  
 [Installation](#installation)  
 [Operations](#operations)  
 [Credentials](#credentials)  
@@ -16,38 +12,42 @@ Need implementation help for your business? Want more n8n or no-code/low-code re
 [Resources](#resources)  
 [Version history](#version-history)
 
-## Node Feedback
-
-Please submit feedback to us if you have any ideas to improve this node, or experience a bug by [submitting it to us here](https://vform.fillout.com/airtable-node-feedback).
-
-## Important Notes
-
-- When triggered this node uses 2 API calls to your Airtable base (list webhooks and list payloads).
-- Please be aware that Airtable limits 10 webhooks per base, [read more here](https://airtable.com/developers/web/api/create-a-webhook).
-- The access token you use for this node needs webhook read/write scopes.
-- Creator level permissions are required in order to register a webhook, [read more here](https://airtable.com/developers/web/api/create-a-webhook).
-
 ## Installation
 
 Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
 
 ## Operations
 
-- Watch for record creation
-- Watch for record updates
-- Watch for record deletions
-- Specify fields to watch for changes
-- Include additional field data in the output
-- Include previous cell values of changed fields in the output
-- Watch for field schema or table metadata changes
+### Trigger Node - Fillout Trigger
+
+The trigger node allows you to start workflows when a form is submitted in Fillout:
+
+- Listen for form submissions via webhook
+- Test with previous submissions
+
+### Action Node - Fillout
+
+The action node allows you to perform various operations with Fillout:
+
+**Form Operations:**
+- Get all forms
+- Get form metadata (including questions)
+
+**Submission Operations:**
+- Get all submissions for a form
+- Get a specific submission
+- Create a submission
+- Delete a submission
 
 ## Credentials
 
-You need an Airtable Personal Access Token to use this node.
+You need a Fillout API key to use these nodes:
 
-1. Go to your [Airtable account page](https://airtable.com/account)
-2. In the API section, create a Personal Access Token with permissions to access your bases
-3. Use the token in the n8n credentials for this node
+1. Log in to your Fillout account
+2. Go to your Account Settings
+3. Navigate to the Developer section
+4. Generate an API key
+5. Use this key in the n8n credentials for the Fillout nodes
 
 ## Compatibility
 
@@ -55,48 +55,34 @@ Tested with n8n version 1.92.2
 
 ## Usage
 
+### Trigger Node
+
 1. Create a new workflow
-2. Add an "Airtable Webhook Trigger" node as the trigger
-3. Configure the credentials
-4. Select the base and table you want to monitor
-5. Select fields to watch for changes
-6. Select any additional fields to include in the output
-7. Choose if you want to include previous values in the output
-8. Select which events to trigger on (record creation and/or updates)
-9. Set any other additional fields to include in the Airtable webhook specification
-10. Save the workflow and activate it
+2. Add a "Fillout Trigger" node as the trigger
+3. Configure your Fillout API credentials
+4. Select the form you want to monitor for submissions
+5. Optionally select a previous submission to use for testing
+6. Save and activate the workflow
 
-The node will then trigger your workflow when the specified changes occur in your Airtable table.
+The node will then trigger your workflow when the form is submitted.
 
-### Output Format
+### Action Node
 
-Example node output:
-
-```json
-{
-  "recordId": "recXXXXXXXXXXXXXX",
-  "fieldChanged": "Field Name",
-  "fieldChangedId": "fldXXXXXXXXXXXXXX",
-  "previousValue": "Previous value (if available)",
-  "currentValue": "Current value",
-  "includedData": [
-		{
-    "Field 1": "Value 1"},
-		{
-			"Field 2": "Value 2"
-		}
-	]
-}
-```
+1. Add the "Fillout" node to your workflow
+2. Configure your Fillout API credentials
+3. Select the resource and operation you want to perform
+4. Fill in the required parameters
+5. Execute the node
 
 ## Resources
 
 * [n8n community nodes documentation](https://docs.n8n.io/integrations/community-nodes/)
-* [Airtable API documentation](https://airtable.com/developers/web/api/introduction)
-* [Airtable webhooks documentation](https://airtable.com/developers/web/api/webhooks)
+* [Fillout API documentation](https://www.fillout.com/help/api-documentation)
 
 ## Version history
 
-### 1.0.0
+### 0.1.0
 
 - Initial release
+- Added Fillout Trigger node for form submission webhooks
+- Added Fillout Action node for forms and submissions management
