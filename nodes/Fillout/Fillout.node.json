@@ -1,5 +1,5 @@
 {
-  "node": "n8n-nodes-fillout-vwork-digital-v3.fillout",
+  "node": "n8n-nodes-fillout-vwork-digital.fillout",
   "nodeVersion": "1.0",
   "codexVersion": "1.0",
   "categories": [
@@ -13,7 +13,7 @@
     ],
     "primaryDocumentation": [
       {
-        "url": "https://www.fillout.com/help/api-documentation"
+        "url": "https://vform.fillout.com/fillout-n8n-node-feedback"
       }
     ]
   }

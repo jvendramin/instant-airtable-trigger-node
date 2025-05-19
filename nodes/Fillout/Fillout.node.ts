@@ -167,11 +167,7 @@ export class Fillout implements INodeType {
 			{
 				displayName: 'Submission ID',
 				name: 'submissionId',
-				type: 'options',
-				typeOptions: {
-					loadOptionsDependsOn: ['formId'],
-					loadOptionsMethod: 'getSubmissions',
-				},
+				type: 'string',
 				required: true,
 				default: '',
 				displayOptions: {
@@ -548,8 +544,9 @@ export class Fillout implements INodeType {
 						json: true,
 					});
 
-					console.log('[Fillout] Submission retrieved successfully');
+					console.log('[Fillout] Submission retrieved successfully:', JSON.stringify(response));
 
+					// Return the submission directly - this ensures we just output the JSON
 					returnData.push({ json: response });
 				} catch (error) {
 					console.error('[Fillout] Error getting submission:', error);

@@ -1,3 +1,4 @@
+/* eslint-disable n8n-nodes-base/node-execute-block-wrong-error-thrown */
 import {
 	IHookFunctions,
 	IWebhookFunctions,
@@ -5,9 +6,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 	IWebhookResponseData,
-	IDataObject,
 	NodeApiError,
-	ITriggerFunctions,
 	JsonObject,
 	NodeConnectionType,
 } from 'n8n-workflow';
@@ -41,7 +40,7 @@ export class FilloutTrigger implements INodeType {
 		],
 		properties: [
 			{
-				displayName: 'Select Form to Trigger Workflow',
+				displayName: 'Form',
 				name: 'formId',
 				type: 'options',
 				typeOptions: {
@@ -49,25 +48,7 @@ export class FilloutTrigger implements INodeType {
 				},
 				default: '',
 				required: true,
-				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
-			},
-			{
-				displayName: 'Test With Previous Submission',
-				name: 'submissionId',
-				type: 'options',
-				typeOptions: {
-					loadOptionsDependsOn: ['formId'],
-					loadOptionsMethod: 'getSubmissions',
-				},
-				default: '',
-				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>. Hitting test step button will output the data for the selected submission.',
-			},
-			// Hidden field to store webhook ID - using a different approach than displayOptions
-			{
-				displayName: 'Webhook ID',
-				name: 'webhookId',
-				type: 'hidden',
-				default: '',
+				description: 'The Fillout form that will trigger this workflow when a submission is received',
 			},
 		],
 	};
@@ -102,173 +83,149 @@ export class FilloutTrigger implements INodeType {
 					throw new NodeApiError(this.getNode(), error as JsonObject);
 				}
 			},
+		},
+	};
 
-			async getSubmissions(this: ILoadOptionsFunctions) {
-				const credentials = await this.getCredentials('filloutApi');
-				const formId = this.getCurrentNodeParameter('formId') as string;
+	// Use webhookMethods like in the Airtable Trigger example
+	webhookMethods = {
+		default: {
+			async checkExists(this: IHookFunctions): Promise<boolean> {
+				const webhookData = this.getWorkflowStaticData('node');
 
-				if (!formId) {
-					console.log('[Fillout Trigger] No form ID selected, returning empty options');
-					return [{ name: 'Please Select a Form First', value: '' }];
+				if (webhookData.webhookId === undefined) {
+					console.log('[Fillout Trigger] No webhook ID in static data, webhook does not exist');
+					return false;
 				}
 
-				console.log(`[Fillout Trigger] Loading submissions for form ${formId}...`);
+				console.log(`[Fillout Trigger] Checking if webhook with ID ${webhookData.webhookId} exists`);
+
+				// We don't have a specific webhook lookup endpoint in Fillout API
+				// So we'll just assume if we have a webhookId, it exists
+				return true;
+			},
+
+			async create(this: IHookFunctions): Promise<boolean> {
+				const webhookUrl = this.getNodeWebhookUrl('default');
+				const webhookData = this.getWorkflowStaticData('node');
+				const formId = this.getNodeParameter('formId') as string;
+				const credentials = await this.getCredentials('filloutApi');
+
+				console.log(`[Fillout Trigger] Creating webhook for form ${formId} with URL ${webhookUrl}`);
 
 				try {
-					// Get submissions from Fillout API
 					const response = await this.helpers.request({
-						method: 'GET',
-						url: `${credentials.apiUrl}/v1/api/forms/${formId}/submissions`,
-						qs: {
-							sort: 'desc',
-							includeEditLink: true,
-							limit: 50, // Limit to 50 submissions to keep the dropdown manageable
+						method: 'POST',
+						url: `${credentials.apiUrl}/v1/api/webhook/create`,
+						body: {
+							formId,
+							url: webhookUrl,
 						},
 						headers: {
 							Authorization: `Bearer ${credentials.apiKey}`,
+							'Content-Type': 'application/json',
 						},
 						json: true,
 					});
 
-					const data = response as { responses: Array<{ submissionId: string; submissionTime: string }> };
+					console.log(`[Fillout Trigger] Webhook creation response: ${JSON.stringify(response)}`);
 
-					console.log(`[Fillout Trigger] Loaded ${data.responses?.length || 0} submissions`);
-
-					if (!data.responses || !data.responses.length) {
-						return [{ name: 'No Previous Submissions Found', value: '' }];
+					if (!response || !response.id) {
+						throw new Error(`Failed to create webhook for form ${formId}. Response: ${JSON.stringify(response)}`);
 					}
 
-					return data.responses.map(submission => ({
-						name: `Submission from ${new Date(submission.submissionTime).toLocaleString()}`,
-						value: submission.submissionId,
-					}));
+					console.log(`[Fillout Trigger] Webhook created with ID: ${response.id}`);
+
+					// Store webhook ID and form ID to use for deactivation
+					webhookData.webhookId = response.id;
+					webhookData.formId = formId;
+
+					return true;
 				} catch (error) {
-					console.error('[Fillout Trigger] Error loading submissions:', error);
-					throw new NodeApiError(this.getNode(), error as JsonObject);
+					console.error('[Fillout Trigger] Error creating webhook:', error);
+					throw error;
+				}
+			},
+
+			async delete(this: IHookFunctions): Promise<boolean> {
+				const webhookData = this.getWorkflowStaticData('node');
+				const credentials = await this.getCredentials('filloutApi');
+
+				if (webhookData.webhookId === undefined) {
+					console.log('[Fillout Trigger] No webhook ID found, skipping delete');
+					return false;
+				}
+
+				const webhookId = webhookData.webhookId as string;
+				console.log(`[Fillout Trigger] Deleting webhook with ID: ${webhookId}`);
+
+				try {
+					// Delete the webhook using the Fillout API
+					const response = await this.helpers.request({
+						method: 'POST',
+						url: `${credentials.apiUrl}/v1/api/webhook/delete`,
+						body: {
+							webhookId,
+						},
+						headers: {
+							Authorization: `Bearer ${credentials.apiKey}`,
+							'Content-Type': 'application/json',
+						},
+						json: true,
+					});
+
+					console.log(`[Fillout Trigger] Webhook deletion response: ${JSON.stringify(response)}`);
+
+					// Clean up the static data
+					delete webhookData.webhookId;
+					delete webhookData.formId;
+
+					return true;
+				} catch (error) {
+					console.error('[Fillout Trigger] Error deleting webhook:', error);
+					return false;
 				}
 			},
 		},
 	};
 
-	// This method will be called when the node is initialized
+	// This method processes webhook data when received
 	async webhook(this: IWebhookFunctions): Promise<IWebhookResponseData> {
-		const bodyData = this.getBodyData() as IDataObject;
-		console.log('[Fillout Trigger] Webhook received:', JSON.stringify(bodyData));
-		return {
-			workflowData: [
-				this.helpers.returnJsonArray(bodyData),
-			],
-		};
-	}
-
-	// This method will be called when the workflow is activated or for testing
-	async activate(this: IHookFunctions) {
-		const credentials = await this.getCredentials('filloutApi');
-		const formId = this.getNodeParameter('formId') as string;
-		const webhookUrl = this.getNodeWebhookUrl('default');
-
-		console.log(`[Fillout Trigger] Activating with Form ID: ${formId}`);
-		console.log(`[Fillout Trigger] Webhook URL: ${webhookUrl}`);
-
-		// Create webhook in Fillout
 		try {
-			const response = await this.helpers.request({
-				method: 'POST',
-				url: `${credentials.apiUrl}/v1/api/webhook/create`,
-				body: {
-					formId,
-					url: webhookUrl,
-				},
-				headers: {
-					Authorization: `Bearer ${credentials.apiKey}`,
-					'Content-Type': 'application/json',
-				},
-				json: true,
-			});
-
-			console.log(`[Fillout Trigger] Webhook created with ID: ${response.id}`);
-
-			// Store webhook ID to use for deactivation
-			// The proper way to store this depends on n8n version
-			// In newer n8n versions, we need to use a different approach
-			const webhookData = this.getWorkflowStaticData('node');
-			webhookData.webhookId = response.id.toString();
-			console.log(`[Fillout Trigger] Stored webhook ID: ${response.id} in workflow static data`);
-		} catch (error) {
-			console.error('[Fillout Trigger] Error creating webhook:', error);
-			throw new NodeApiError(this.getNode(), error as JsonObject);
-		}
-	}
-
-	// This method will be called when the node is manually tested
-	async trigger(this: ITriggerFunctions) {
-		const credentials = await this.getCredentials('filloutApi');
-		const formId = this.getNodeParameter('formId') as string;
-		const submissionId = this.getNodeParameter('submissionId', '') as string;
-
-		console.log(`[Fillout Trigger] Testing with Form ID: ${formId}`);
-
-		try {
-			// If we have a submission ID, use it for testing
-			if (submissionId) {
-				console.log(`[Fillout Trigger] Using submission: ${submissionId} for testing`);
-
-				const responseData = await this.helpers.request({
-					method: 'GET',
-					url: `${credentials.apiUrl}/v1/api/forms/${formId}/submissions/${submissionId}`,
-					headers: {
-						Authorization: `Bearer ${credentials.apiKey}`,
-					},
-					json: true,
-				});
-
-				console.log('[Fillout Trigger] Test submission loaded successfully', responseData.submission?.submissionId);
-
-				// Update to match expected ITriggerResponse format in n8n 1.92.2
-				// We need to return undefined for ITriggerResponse per interface
-				return undefined;
-			} else {
-				console.log('[Fillout Trigger] No test submission selected, returning empty data');
-
-				// Return undefined for ITriggerResponse in n8n 1.92.2
-				return undefined;
+			// Get the raw webhook data
+			let bodyData = this.getBodyData();
+			console.log('[Fillout Trigger] Webhook received, raw data type:', typeof bodyData);
+			
+			// If the data is a string, try to parse it as JSON
+			if (typeof bodyData === 'string') {
+				try {
+					bodyData = JSON.parse(bodyData);
+					console.log('[Fillout Trigger] Successfully parsed string data as JSON');
+				} catch (e) {
+					console.log('[Fillout Trigger] Could not parse string as JSON, using as is');
+				}
 			}
+			
+			// Ensure we're working with an object (not a string)
+			const processedData = (typeof bodyData === 'object') ? bodyData : { rawData: bodyData };
+			
+			// Log the processed data for debugging
+			console.log('[Fillout Trigger] Processed data:', JSON.stringify(processedData).slice(0, 200) + '...');
+			
+			// Return the data as a proper object for the workflow
+			return {
+				workflowData: [
+					this.helpers.returnJsonArray([processedData]),
+				],
+			};
 		} catch (error) {
-			console.error('[Fillout Trigger] Error in trigger function:', error);
-			throw new NodeApiError(this.getNode(), error as JsonObject);
-		}
-	}
-
-	// This method will be called when the workflow is deactivated
-	async deactivate(this: IHookFunctions) {
-		const credentials = await this.getCredentials('filloutApi');
-		const webhookData = this.getWorkflowStaticData('node');
-		const webhookId = webhookData.webhookId as string;
-
-		if (webhookId) {
-			console.log(`[Fillout Trigger] Deactivating webhook: ${webhookId}`);
-
-			try {
-				await this.helpers.request({
-					method: 'POST',
-					url: `${credentials.apiUrl}/v1/api/webhook/delete`,
-					body: {
-						webhookId,
-					},
-					headers: {
-						Authorization: `Bearer ${credentials.apiKey}`,
-						'Content-Type': 'application/json',
-					},
-					json: true,
-				});
-
-				console.log('[Fillout Trigger] Webhook removed successfully');
-			} catch (error) {
-				console.error('[Fillout Trigger] Error removing webhook:', error);
-				// Don't throw here, as we want to clean up even if there's an error
-			}
-		} else {
-			console.log('[Fillout Trigger] No webhook ID found, skipping deactivation');
+			console.error('[Fillout Trigger] Error processing webhook data:', error);
+			
+			// Even on error, return something usable
+			return {
+				workflowData: [
+					this.helpers.returnJsonArray([{ error: 'Error processing webhook data' }]),
+				],
+			};
 		}
 	}
 }

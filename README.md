@@ -1,9 +1,14 @@
-# Fillout Nodes for n8n
+# Fillout for N8N by vwork Digital
 
-This is an n8n community node package providing integration with [Fillout](https://www.fillout.com) forms. It includes both trigger and action nodes for working with Fillout forms and form submissions.
+These are n8n community nodes for triggering workflows based on Fillout submissions, and interacting with your Fillout forms directly in N8N.
+
+This node was created by Jacob @ vwork Digital and is NOT affiliated with Fillout in anyway. Please see [Node Feedback](#node-feedback) for how to submit feedback or issues about these nodes.
+
+Need implementation help for your business? Want more n8n or no-code/low-code resources? Visit our website now! Don't forget to subscribe to our newsletter.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
+[Node Feedback](#node-feedback)
 [Installation](#installation)  
 [Operations](#operations)  
 [Credentials](#credentials)  
@@ -11,6 +16,9 @@ This is an n8n community node package providing integration with [Fillout](https
 [Usage](#usage)  
 [Resources](#resources)  
 [Version history](#version-history)
+
+## Node Feedback
+Please submit feedback to us if you have any ideas to improve this node, or experience a bug by submitting it to us here.
 
 ## Installation
 
@@ -20,10 +28,7 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 ### Trigger Node - Fillout Trigger
 
-The trigger node allows you to start workflows when a form is submitted in Fillout:
-
-- Listen for form submissions via webhook
-- Test with previous submissions
+The trigger node allows you to start workflows when a form is submitted in Fillout.
 
 ### Action Node - Fillout
 
@@ -81,7 +86,7 @@ The node will then trigger your workflow when the form is submitted.
 
 ## Version history
 
-### 0.1.0
+### 1.0.0
 
 - Initial release
 - Added Fillout Trigger node for form submission webhooks

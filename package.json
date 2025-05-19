@@ -1,6 +1,6 @@
 {
-  "name": "n8n-nodes-fillout-vwork-digital-v3",
-  "version": "1.0.1",
+  "name": "n8n-nodes-fillout-vwork-digital",
+  "version": "1.0.0",
   "description": "N8N nodes for Fillout forms - includes both trigger and action nodes.",
   "keywords": [
     "n8n-community-node-package",
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/fillout-n8n-node.git"
+    "url": "git+https://github.com/jvendramin/fillout-n8n-node.git"
   },
   "engines": {
     "node": ">=20.11.0"
